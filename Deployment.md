@@ -56,7 +56,7 @@ Invoke-RestMethod -Uri http://localhost:8080/predict -Method POST -Body $body -C
 
 
 
-# 🐧 Penguin API Deployment Guide
+#  Penguin API Deployment Guide
 
 ## 7. Service Account & Environment Variables
 
@@ -119,9 +119,9 @@ curl -X POST https://penguin-api-191199043596.us-central1.run.app/predict ^
 
 ## 9. Deployment Issues & Fixes
 
-- 🛠️ **Permissions/mount issues**: Fixed volume path and file existence
-- 🕒 **Cold start delay**: ~10 seconds to load model from GCS
-- 🔐 **Missing env vars**: Set correctly via Cloud Run UI
+-  **Permissions/mount issues**: Fixed volume path and file existence
+-  **Cold start delay**: ~10 seconds to load model from GCS
+-  **Missing env vars**: Set correctly via Cloud Run UI
 
 ---
 
@@ -137,5 +137,4 @@ curl -X POST https://penguin-api-191199043596.us-central1.run.app/predict ^
 
 ```text
 https://penguin-api-191199043596.us-central1.run.app
-```
 ```

@@ -150,3 +150,64 @@ Name          Stmts   Miss  Cover
 app\main.py      88      4    95%
 ---------------------------------
 TOTAL            88      4    95%
+
+## 8. Design & Resiliency Considerations
+
+### What edge cases might break your model in production that aren't in your training data?
+- Extremely small or negative measurements (e.g. bill_length_mm < 0)
+- Missing year data or out‐of‐range years
+- Unseen island names or sex values (caught by Pydantic enums)
+
+### What happens if your model file becomes corrupted?
+- Startup will raise on `XGBClassifier.load_model()`
+- Health check will fail
+- Mitigation: use versioned model artifacts & fail‐fast probes
+
+### What's a realistic load for a penguin classification service?
+- Based on Locust: ~6 req/s per container under normal load
+- Plan for peak ~30 req/s (5 instances) in production
+
+### How would you optimize if response times are too slow?
+- Increase CPU or concurrency on Cloud Run
+- Quantize or simplify the XGBoost model
+- Warm up cold starts (min instances > 0)
+
+### What metrics matter most for ML inference APIs?
+- P50 / P95 / P99 latency
+- Throughput (req/s)
+- Error/failure rate
+- CPU & memory utilization
+
+### Why is Docker layer caching important for build speed? (Did you leverage it?)
+- We split `COPY requirements.txt` and `pip install` so deps are cached
+- Speeds up rebuilds when only application code changes
+
+### What security risks exist with running containers as root?
+- Potential host escape if a vulnerability is exploited
+- Mitigation: switch to non-root user in production image
+
+### How does cloud auto-scaling affect your load test results?
+- Cold starts (~200–500 ms) when new instances spin up
+- Smooth throughput but occasional latency spikes
+
+### What would happen with 10x more traffic?
+- Would need higher max instances or a CDN/API gateway
+- Consider horizontal scaling & rate limiting
+
+### How would you monitor performance in production?
+- Cloud Monitoring dashboards for CPU, memory, latency, error rates
+- Alert on P95 latency > 200 ms or error rate > 1%
+
+### How would you implement blue-green deployment?
+- Deploy a new revision alongside the old
+- Use traffic splitting (10/90 → 50/50 → 100/0)
+- Roll back instantly if errors spike
+
+### What would you do if deployment fails in production?
+- Roll back via Cloud Run console or gcloud to the last healthy revision
+- Review logs for quick root-cause
+
+### What happens if your container uses too much memory?
+- Cloud Run will OOM-kill containers exceeding memory limit
+- Use monitoring to detect OOMs and increase memory or optimize model
+
