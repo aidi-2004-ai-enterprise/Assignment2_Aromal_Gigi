@@ -1,0 +1,18 @@
+[project]
+name = "assignment2-aromal-gigi"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.116.1",
+    "pandas>=2.3.1",
+    "pydantic>=2.11.7",
+    "scikit-learn>=1.7.1",
+    "seaborn>=0.13.2",
+    "uvicorn[standard]>=0.35.0",
+    "xgboost>=3.0.2",
+    "pytest>=8.4.1",
+    "google-cloud-storage>=2.11.0",      
+    "pytest-cov>=5.0.0"   
+]
