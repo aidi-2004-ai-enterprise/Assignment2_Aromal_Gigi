@@ -1,3 +1,5 @@
+# app/main.py
+
 import json
 import logging
 import os
@@ -6,6 +8,7 @@ from enum import Enum
 from pathlib import Path
 from typing import List, Dict, Any
 
+from dotenv import load_dotenv
 import pandas as pd
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
@@ -15,21 +18,24 @@ from pydantic import BaseModel
 from starlette.status import HTTP_400_BAD_REQUEST
 from xgboost import XGBClassifier
 
+# ─── Load environment variables ───────────────────────────────────────────────────────
+load_dotenv()  # reads .env in project root
+
+# ─── 1. Enums for categorical validation ─────────────────────────────────────────────
 class Island(str, Enum):
     """Valid penguin island options."""
     Torgersen = "Torgersen"
-    Biscoe = "Biscoe"
-    Dream = "Dream"
+    Biscoe    = "Biscoe"
+    Dream     = "Dream"
 
 class Sex(str, Enum):
     """Valid penguin sex options."""
-    male = "male"
+    male   = "male"
     female = "female"
 
+# ─── 2. Pydantic request model ────────────────────────────────────────────────────────
 class PenguinFeatures(BaseModel):
-    """
-    Schema for penguin features used in predictions.
-    """
+    """Request schema for /predict endpoint."""
     bill_length_mm: float
     bill_depth_mm: float
     flipper_length_mm: float
@@ -38,81 +44,63 @@ class PenguinFeatures(BaseModel):
     sex: Sex
     island: Island
 
+# ─── 3. App & logger setup ────────────────────────────────────────────────────────────
 app = FastAPI()
 logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger("penguin-api")
 
+# ─── 4. Validation exception handler ─────────────────────────────────────────────────
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
-    """
-    Custom validation error handler to return HTTP 400.
-    """
+    """Return HTTP 400 when request validation fails."""
     logger.debug(f"Validation error on {request.url}: {exc}")
     return JSONResponse(
         status_code=HTTP_400_BAD_REQUEST,
-        content={"detail": exc.errors()}
+        content={"detail": exc.errors()},
     )
 
-def _download_from_gcs(uri: str) -> Path:
-    """
-    Download a GCS blob to a temporary file and return its path.
+# ─── 5. Download and load model from GCS ──────────────────────────────────────────────
+bucket_name = os.environ["GCS_BUCKET_NAME"]
+blob_name   = os.environ["GCS_BLOB_NAME"]
 
-    Args:
-        uri (str): The GCS URI in the format 'gs://bucket_name/blob_name'.
+client = storage.Client()
+bucket = client.bucket(bucket_name)
+blob = bucket.blob(blob_name)
 
-    Returns:
-        Path: The local path to the downloaded file.
-    """
-    parts = uri.replace("gs://", "").split("/", 1)
-    bucket_name, blob_name = parts[0], parts[1]
-    client = storage.Client()
-    bucket = client.bucket(bucket_name)
-    blob = bucket.blob(blob_name)
-    temp_dir = Path(tempfile.mkdtemp())
-    destination = temp_dir / Path(blob_name).name
-    blob.download_to_filename(str(destination))
-    logger.info(f"Downloaded {uri} to {destination}")
-    return destination
+# Download model.json to a temp file
+temp_dir = Path(tempfile.mkdtemp())
+local_model_path = temp_dir / blob_name
+blob.download_to_filename(str(local_model_path))
+logger.info(f"Downloaded model from gs://{bucket_name}/{blob_name} to {local_model_path}")
 
-# ----- Model & Metadata Loading -----
-PROJECT_ROOT = Path(__file__).parent.parent.resolve()
-DEFAULT_MODEL_PATH = PROJECT_ROOT / "app" / "data" / "model.json"
-DEFAULT_METADATA_PATH = PROJECT_ROOT / "app" / "data" / "metadata.json"
+# Load XGBoost model
+model = XGBClassifier()
+model.load_model(str(local_model_path))
+logger.info("XGBoost model loaded from GCS")
 
-MODEL_PATH = os.environ.get("MODEL_PATH", str(DEFAULT_MODEL_PATH))
-METADATA_PATH = os.environ.get("METADATA_PATH", str(DEFAULT_METADATA_PATH))
-
-model = XGBoostClassifier = XGBClassifier()
-if MODEL_PATH.startswith("gs://"):
-    local_model = _download_from_gcs(MODEL_PATH)
-    model.load_model(str(local_model))
-else:
-    model.load_model(MODEL_PATH)
-
-if METADATA_PATH.startswith("gs://"):
-    local_meta = _download_from_gcs(METADATA_PATH)
-    metadata_file = local_meta
-else:
-    metadata_file = Path(METADATA_PATH)
-
-with open(metadata_file, "r") as f:
+# ─── 6. Load metadata from local file ─────────────────────────────────────────────────
+metadata_path = Path(__file__).parent / "data" / "metadata.json"
+with open(metadata_path, "r") as f:
     meta: Dict[str, List[str]] = json.load(f)
 
-FEATURE_COLUMNS = meta["feature_columns"]
-LABEL_CLASSES = meta["label_classes"]
-logger.info(f"Loaded model with {len(FEATURE_COLUMNS)} features and {len(LABEL_CLASSES)} classes")
+FEATURE_COLUMNS: List[str] = meta["feature_columns"]
+LABEL_CLASSES: List[str]   = meta["label_classes"]
+logger.info(f"Loaded metadata: {len(FEATURE_COLUMNS)} features, {len(LABEL_CLASSES)} classes")
 
+# ─── 7. Root endpoint ────────────────────────────────────────────────────────────────
 @app.get("/", include_in_schema=False)
 def read_root() -> Dict[str, str]:
     """Root endpoint returning a welcome message."""
     return {"message": "Hello! Welcome to the Penguins Classification API."}
 
+# ─── 8. Health-check endpoint ───────────────────────────────────────────────────────
 @app.get("/health")
 def health_check() -> Dict[str, str]:
     """Simple health check endpoint."""
     return {"status": "ok"}
 
+# ─── 9. Prediction endpoint ─────────────────────────────────────────────────────────
 @app.post("/predict")
 def predict(features: PenguinFeatures) -> Dict[str, Any]:
     """
@@ -124,7 +112,7 @@ def predict(features: PenguinFeatures) -> Dict[str, Any]:
     Returns:
         dict: Predicted penguin species.
     """
-    payload = features.model_dump()
+    payload = features.model_dump()  # Pydantic v2
     logger.info(f"Prediction requested: {payload}")
 
     df = pd.DataFrame([payload])
@@ -133,9 +121,9 @@ def predict(features: PenguinFeatures) -> Dict[str, Any]:
 
     try:
         pred = model.predict(df)[0]
-        result = LABEL_CLASSES[int(pred)]
-        logger.info(f"Prediction result: {result}")
-        return {"species": result}
-    except Exception as e:
-        logger.error("Prediction failed", exc_info=e)
+        species = LABEL_CLASSES[int(pred)]
+        logger.info(f"Prediction result: {species}")
+        return {"species": species}
+    except Exception:
+        logger.error("Prediction failed", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal prediction error")
