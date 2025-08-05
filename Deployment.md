@@ -55,7 +55,7 @@ Invoke-RestMethod -Uri http://localhost:8080/predict -Method POST -Body $body -C
 * **Image Size**: 2.31 GB
 
 
-```markdown
+
 # 🐧 Penguin API Deployment Guide
 
 ## 7. Service Account & Environment Variables
