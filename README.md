@@ -3,11 +3,7 @@
 This project builds a robust ML pipeline to classify penguin species based on physical measurements. It’s built with FastAPI and XGBoost, thoroughly tested, Dockerized, and deployed to Google Cloud Run.
 
 ---
-## 📺 Demo Video
 
-[▶️ Click to watch the demo video](./Demo.mp4)
-
----
 
 ## 1. Clone and Set Up Environment
 
@@ -139,7 +135,7 @@ Expected Response:
 
 ## 5. Demo Video
 
-A demo video [`Demo.mp4`](Demo.mp4) is included, showcasing:
+A demo video [`Demo.mp4`](demo.mp4) is included, showcasing:
 
 -  **Training & Server Launch**  
   Running the training script and starting the API server.
