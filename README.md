@@ -133,9 +133,19 @@ Expected Response:
 ```
 
 ## 5. Demo Video
-- A demo video (`Demo.mp4`) is included, demonstrating:
-  - Running training and launching the server
-  - Sending valid and invalid requests (for both `sex` & `island`)
+
+A demo video [`Demo.mp4`](Demo.mp4) is included, showcasing:
+
+-  **Training & Server Launch**  
+  Running the training script and starting the API server.
+
+-  **Request Handling**  
+  Sending both valid and invalid requests for `sex` and `island` parameters.
+
+-  **Code Walkthrough**  
+  Brief explanation of core logic in `main.py` and validation in `test_api.py`.
+
+
     
 
 ## 6. Dependencies
