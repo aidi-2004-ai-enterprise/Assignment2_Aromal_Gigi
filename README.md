@@ -237,3 +237,4 @@ TOTAL            79      0    100%
 
 ### What happens if your container uses too much memory?
 - If my container uses too much memory on Cloud Run, it will get OOM-killed (stopped automatically). I should monitor for OOM events, then either increase memory or optimize my model to prevent crashes.
+
