@@ -7,8 +7,8 @@ This project builds a robust ML pipeline to classify penguin species based on ph
 ## 1. Clone and Set Up Environment
 
 ```bash
-git clone https://github.com/aidi-2004-ai-enterprise/lab03_Aromal_Gigi.git
-cd lab3_Aromal_Gigi
+[git clone https://github.com/aidi-2004-ai-enterprise/lab03_Aromal_Gigi.git](https://github.com/aidi-2004-ai-enterprise/Assignment2_Aromal_Gigi.git)
+cd Assignment2_Aromal_Gigi
 ```
 ```bash
 uv init
@@ -196,13 +196,11 @@ TOTAL            79      0    100%
 - Mitigation: use versioned model artifacts & fail‐fast probes
 
 ### What's a realistic load for a penguin classification service?
-- Based on Locust: ~6 req/s per container under normal load
-- Plan for peak ~30 req/s (5 instances) in production
+- A realistic load for my penguin classification service is about 6 requests per second per container, based on my Locust tests. In production, I should plan for peaks up to 30 requests per second by scaling to 5 instances.
 
 ### How would you optimize if response times are too slow?
 - Increase CPU or concurrency on Cloud Run
 - Quantize or simplify the XGBoost model
-- Warm up cold starts (min instances > 0)
 
 ### What metrics matter most for ML inference APIs?
 - P50 / P95 / P99 latency
@@ -211,16 +209,14 @@ TOTAL            79      0    100%
 - CPU & memory utilization
 
 ### Why is Docker layer caching important for build speed? (Did you leverage it?)
-- We split `COPY requirements.txt` and `pip install` so deps are cached
-- Speeds up rebuilds when only application code changes
+- Docker layer caching is important because it makes rebuilds much faster. I used it by splitting COPY requirements.txt and running pip install separately, so my dependencies are cached. This way, when I change only the application code, the rebuild is much quicker.
 
 ### What security risks exist with running containers as root?
 - Potential host escape if a vulnerability is exploited
 - Mitigation: switch to non-root user in production image
 
 ### How does cloud auto-scaling affect your load test results?
-- Cold starts (~200–500 ms) when new instances spin up
-- Smooth throughput but occasional latency spikes
+- cloud auto-scaling means that when demand increases, new instances spin up, causing cold starts that add a delay of about 200–500 ms. During load testing, I noticed overall smooth throughput, but there were occasional latency spikes because of these cold starts.
 
 ### What would happen with 10x more traffic?
 - Would need higher max instances or a CDN/API gateway
@@ -240,6 +236,5 @@ TOTAL            79      0    100%
 - Review logs for quick root-cause
 
 ### What happens if your container uses too much memory?
-- Cloud Run will OOM-kill containers exceeding memory limit
-- Use monitoring to detect OOMs and increase memory or optimize model
+- If my container uses too much memory on Cloud Run, it will get OOM-killed (stopped automatically). I should monitor for OOM events, then either increase memory or optimize my model to prevent crashes.
 
