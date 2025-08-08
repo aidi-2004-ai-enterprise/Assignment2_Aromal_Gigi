@@ -45,6 +45,23 @@ curl -X POST "http://127.0.0.1:8000/predict" ^
   -H "Content-Type: application/json" ^
   -d "{\"bill_length_mm\":39.1,\"bill_depth_mm\":18.7,\"flipper_length_mm\":181,\"body_mass_g\":3750,\"year\":2007,\"sex\":\"male\",\"island\":\"Torgersen\"}"
 ```
+json
+```
+{
+  "bill_length_mm": 39.1,
+  "bill_depth_mm": 18.7,
+  "flipper_length_mm": 181,
+  "body_mass_g": 3750,
+  "year": 2007,
+  "sex": "male",
+  "island": "Torgersen"
+}
+```
+Expected Response:
+
+```bash
+{"species":"Adelie"}
+```
 
 With PowerShell:
 
@@ -139,17 +156,22 @@ This project uses the following open-source libraries and tools:
 
 All unit tests were executed using `pytest` and coverage measured with `pytest-cov`.
 
+```
+pytest --cov=app tests/
+
+```
+
 **Test Results:**
-- Total tests: 10
+- Total tests: 9
 - All tests passed: ✔️
 
 **Test Coverage:**
 
 Name          Stmts   Miss  Cover
 ---------------------------------
-app\main.py      88      4    95%
+app\main.py      79      0    100%
 ---------------------------------
-TOTAL            88      4    95%
+TOTAL            79      0    100%
 
 ## 8. Design & Resiliency Considerations
 

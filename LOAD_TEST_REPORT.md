@@ -1,6 +1,12 @@
 # 📊 Load Test Report
 
 **Date:** 2025-08-05  
+
+```bash
+uv run locust
+
+```
+
 **Service URLs:**  
 - Local: http://localhost:8080  
 - Cloud Run: https://penguin-api-191199043596.us-central1.run.app  

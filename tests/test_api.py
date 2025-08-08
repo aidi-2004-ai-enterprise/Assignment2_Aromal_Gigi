@@ -5,7 +5,6 @@ Covers:
 - Root & health endpoints
 - Valid prediction
 - Missing field, invalid type, out-of-range, empty requests, boundary cases
-- GCS download helper
 - Internal prediction error handling
 """
 
@@ -22,7 +21,7 @@ sys.path.insert(0, str(project_root))
 os.environ["MODEL_PATH"] = str(project_root / "app" / "data" / "model.json")
 os.environ["METADATA_PATH"] = str(project_root / "app" / "data" / "metadata.json")
 
-from app.main import app, _download_from_gcs, model
+from app.main import app, model
 
 client = TestClient(app)
 
@@ -103,37 +102,6 @@ def test_predict_empty_request() -> None:
     response = client.post("/predict", json={})
     assert response.status_code == 400
 
-def test_download_from_gcs(monkeypatch, tmp_path):
-    """Test that our GCS helper downloads a blob to a temp file."""
-    # Create a dummy source file
-    source = tmp_path / "dummy.txt"
-    content = "hello"
-    source.write_text(content)
-
-    # Dummy blob that writes our source content
-    class DummyBlob:
-        def __init__(self, path):
-            self._path = path
-        def download_to_filename(self, filename):
-            Path(filename).write_text(self._path.read_text())
-
-    class DummyBucket:
-        def __init__(self, path):
-            self._path = path
-        def blob(self, blob_name):
-            return DummyBlob(self._path)
-
-    class DummyClient:
-        def __init__(self, path):
-            self._path = path
-        def bucket(self, bucket_name):
-            return DummyBucket(self._path)
-
-    import app.main as main_mod
-    monkeypatch.setattr(main_mod, "storage", type("S", (), {"Client": lambda *args, **kwargs: DummyClient(source)}))
-    uri = f"gs://any-bucket/{source.name}"
-    downloaded = main_mod._download_from_gcs(uri)
-    assert downloaded.read_text() == content
 
 def test_predict_internal_error(monkeypatch):
     """Forces model.predict to raise an error, testing 500 branch."""

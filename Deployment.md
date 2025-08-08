@@ -16,9 +16,15 @@
 docker build -t penguin-api .
 
 # Run the container mapping host port 8080 to container port 8080
-docker run -d --name penguin-api -p 8080:8080 penguin-api
-```
+docker run -d --name penguin-api `
+  -p 8080:8080 `
+  -e GCS_BUCKET_NAME="penguin-model" `
+  -e GCS_BLOB_NAME="model.json" `
+  -e GOOGLE_APPLICATION_CREDENTIALS="/gcp/sa-key.json" `
+  -v "${PWD}\secrets\sa-key.json:/gcp/sa-key.json:ro" `
+  penguin-api:latest
 
+```
 
 ### 3. Testing Endpoints (locally)
 
@@ -51,10 +57,20 @@ Invoke-RestMethod -Uri http://localhost:8080/predict -Method POST -Body $body -C
 
 ### 6. Summary of Image Layers & Size
 
-* **Layer Count**: 17 layers
+From docker inspect and docker history:
+
+```
+docker images 
+
+docker inspect penguin-api:latest   
+
+docker history penguin-api:latest 
+
+```
+
+* **Total Layers**: 17 layers
+* **Final Filesystem Layers**: 8
 * **Image Size**: 2.31 GB
-
-
 
 #  Penguin API Deployment Guide
 
@@ -74,12 +90,20 @@ GCS_BLOB_NAME=model.json
 
 ## 8. Google Cloud Deployment (Manual from Windows Host)
 
+Make sure you’ve authenticated and set your project:
+
+```bash
+gcloud auth login
+gcloud config set project ml-deployment-demo-467801
+
+```
 ### 8.1. Build for Cloud Run (linux/amd64)
 docker build --platform linux/amd64 -t penguin-api .
 
 ### 8.2. Tag for Artifact Registry
-docker tag penguin-api:latest \
-  us-central1-docker.pkg.dev/ml-deployment-demo-467801/penguin-api-repo/penguin-api:latest
+docker tag penguin-api:latest us-central1-docker.pkg.dev/ml-deployment-demo-467801/penguin-api-repo/penguin-api:latest
+
+docker push us-central1-docker.pkg.dev/ml-deployment-demo-467801/penguin-api-repo/penguin-api:latest
 
 
 ### 8.3. Deploy to Cloud Run
@@ -97,7 +121,6 @@ docker tag penguin-api:latest \
   - `GCS_BLOB_NAME=model.json`
 - Allow **unauthenticated invocations**
 
----
 
 ## 8.4. Run & Test
 
